@@ -27,6 +27,36 @@ import (
 	}
 }
 
+func TestRenderTemplate(t *testing.T){
+	pathToTemplates="./../../../templates";
+
+	tc, err:= CreateTemplateCache();
+
+	if err != nil{
+		t.Error(err)
+	}
+	app.TemplateCache=tc;
+	r,err:=getSession();
+	if err!= nil {
+		t.Error(err)
+	}
+
+	var ww myWriter
+
+
+	err=RenderTemplate(&ww,r,"home.page.html", &models.TemplateData{});
+
+	if err != nil {
+		t.Error("Failed Render templateś")
+	}
+
+	err=RenderTemplate(&ww,r,"tewting.page.html", &models.TemplateData{});
+
+	if err==nil {
+		t.Error("This page doesnt exist")
+	}
+}
+
 func getSession()( *http.Request, error){
 
 	r, err := http.NewRequest("GET", "/someurl", nil) 
@@ -42,4 +72,19 @@ func getSession()( *http.Request, error){
 
 	r=r.WithContext(ctx);
 	return r,nil;
+}
+
+func TestNewTemplates(t *testing.T){
+
+	NewTemplates(app)
+}
+
+func TestCreateTemplateCache(t *testing.T){
+	pathToTemplates="./../../../templates";
+	_,err:=CreateTemplateCache();
+
+	if err !=nil {
+		t.Error("Error")
+	}
+
 }
