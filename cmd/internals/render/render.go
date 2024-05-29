@@ -39,7 +39,7 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, html string, td *mod
     if app.UseCache {
         // get the template cache from the app config
 
-		fmt.Print("value needs to be cache is %s",html);
+		// fmt.Print("value needs to be cache is %s",html);
         tc = app.TemplateCache
     } else {
         tc, _ = CreateTemplateCache()
