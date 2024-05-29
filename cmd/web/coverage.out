@@ -1,0 +1,11 @@
+mode: set
+github.com/sanjay-xdr/cmd/web/main.go:19.13,23.16 2 0
+github.com/sanjay-xdr/cmd/web/main.go:23.16,25.3 1 0
+github.com/sanjay-xdr/cmd/web/main.go:32.2,39.16 3 0
+github.com/sanjay-xdr/cmd/web/main.go:39.16,41.3 1 0
+github.com/sanjay-xdr/cmd/web/main.go:44.18,50.16 3 1
+github.com/sanjay-xdr/cmd/web/main.go:50.16,53.3 2 0
+github.com/sanjay-xdr/cmd/web/main.go:55.2,71.12 13 1
+github.com/sanjay-xdr/cmd/web/middleware.go:10.46,23.2 3 1
+github.com/sanjay-xdr/cmd/web/middleware.go:26.50,28.2 1 1
+github.com/sanjay-xdr/cmd/web/routes.go:12.49,38.2 18 1
