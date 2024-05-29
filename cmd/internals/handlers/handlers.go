@@ -40,12 +40,11 @@ func (m *Repositry) Home(w http.ResponseWriter, r *http.Request) {
 	log.Print(remoteIp, "This is the IP")
 
 	m.App.Session.Put(r.Context(), "remote_ip", remoteIp)
-	stringMap := make(map[string]string)
-	stringMap["test"] = "This is the test data from template"
-	render.RenderTemplate(w, r, "home.page.html", &models.TemplateData{
-		StringMap: stringMap,
-	})
 
+	render.RenderTemplate(w, r, "home.page.html", &models.TemplateData{
+
+	})
+	fmt.Print("this is done")
 }
 
 func (m *Repositry) About(w http.ResponseWriter, r *http.Request) {

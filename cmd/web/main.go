@@ -55,7 +55,7 @@ func run() error {
 	app.TemplateCache = tc
 	app.UseCache = false
 	app.InProduction = false
-	render.NewTemplate(&app)
+	render.NewTemplates(&app)
 
 	repo := handlers.NewRepo(&app)
 

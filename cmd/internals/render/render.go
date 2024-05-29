@@ -13,103 +13,89 @@ import (
 	"github.com/sanjay-xdr/cmd/internals/models"
 )
 
+var functions = template.FuncMap{}
+
 var app *config.AppConfig
+var pathToTemplates = "./templates"
 
-var pathToTemplates="./templates"
-
-func NewTemplate(a *config.AppConfig) {
-	app = a //this app is pointing to the same object as in main
-
+// NewTemplates sets the config for the template package
+func NewTemplates(a *config.AppConfig) {
+    app = a
 }
 
+// AddDefaultData adds data for all templates
 func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
-
-	td.Flash = app.Session.PopString(r.Context(), "flash")
-	td.Error = app.Session.PopString(r.Context(), "error")
-	td.Warning = app.Session.PopString(r.Context(), "warning")
-
-	td.CSRFToken = nosurf.Token(r)
-
-	// data := nosurf.Token(r)
-
-	// fmt.Print("Value of CSRF token ", data)
-	return td
+    td.Flash = app.Session.PopString(r.Context(), "flash")
+    td.Warning = app.Session.PopString(r.Context(), "warning")
+    td.Error = app.Session.PopString(r.Context(), "error")
+    td.CSRFToken = nosurf.Token(r)
+    return td
 }
 
-// This requires to read from disk again and again lets cache it
-func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) {
+// RenderTemplate renders a template
+func RenderTemplate(w http.ResponseWriter, r *http.Request, html string, td *models.TemplateData) {
+    var tc map[string]*template.Template
 
-	var tc map[string]*template.Template
+    if app.UseCache {
+        // get the template cache from the app config
 
-	if app.UseCache {
-		tc = app.TemplateCache
-	} else {
-		res, err := CreateTemplateCache()
+		fmt.Print("value needs to be cache is %s",html);
+        tc = app.TemplateCache
+    } else {
+        tc, _ = CreateTemplateCache()
+    }
 
-		if err != nil {
-			log.Fatal(err)
-		}
+    t, ok := tc[html]
 
-		tc = res
+	fmt.Print(t)
+    if !ok {
+        log.Fatal("Could not get template from template cache")
+    }
 
-	}
+    buf := new(bytes.Buffer)
 
-	t, ok := tc[tmpl]
-	var err error
-	if !ok {
-		log.Fatal(err)
-	}
+    td = AddDefaultData(td, r)
 
-	buf := new(bytes.Buffer)
-	td = AddDefaultData(td, r)
-	err = t.Execute(buf, td)
+    _ = t.Execute(buf, td)
 
-	if err != nil {
-		log.Println("SOmething went wrong", err)
-	}
-
-	_, err = buf.WriteTo(w)
-
-	if err != nil {
-		log.Println("Something went wrong here as well", err)
-	}
+    _, err := buf.WriteTo(w)
+    if err != nil {
+        fmt.Println("error writing template to browser", err)
+    }
 
 }
 
+// CreateTemplateCache creates a template cache as a map
 func CreateTemplateCache() (map[string]*template.Template, error) {
 
-	myCache := map[string]*template.Template{}
+    myCache := map[string]*template.Template{}
 
-	pages, err := filepath.Glob(fmt.Sprintf("%s/*.page.html",pathToTemplates))
+    pages, err := filepath.Glob(fmt.Sprintf("%s/*.page.html", pathToTemplates))
+    if err != nil {
+        return myCache, err
+    }
 
-	if err != nil {
-		return myCache, err
-	}
+    for _, page := range pages {
+        name := filepath.Base(page)
+        ts, err := template.New(name).Funcs(functions).ParseFiles(page)
+        if err != nil {
+            return myCache, err
+        }
 
-	for _, page := range pages {
-		// fmt.Println(page)
-		name := filepath.Base(page)
-		ts, err := template.New(name).ParseFiles(page)
-		if err != nil {
-			return myCache, err
-		}
-		// fmt.Println(ts)
+        matches, err := filepath.Glob(fmt.Sprintf("%s/*.layout.html", pathToTemplates))
+        if err != nil {
+            return myCache, err
+        }
 
-		matches, err :=  filepath.Glob(fmt.Sprintf("%s/*.page.html",pathToTemplates)) //checking for layout
-		if err != nil {
-			return myCache, err
-		}
+        if len(matches) > 0 {
+            ts, err = ts.ParseGlob(fmt.Sprintf("%s/*.layout.html", pathToTemplates))
+            if err != nil {
+                return myCache, err
+            }
+        }
 
-		if len(matches) > 0 {
-			ts, err = ts.ParseGlob(fmt.Sprintf("%s/*.layout.html",pathToTemplates))
-			if err != nil {
-				return myCache, err
-			}
-		}
-		myCache[name] = ts
+        myCache[name] = ts
+    }
 
-	}
-
-	return myCache, nil
-
+    return myCache, nil
 }
