@@ -37,28 +37,20 @@ func (m *Repositry) Home(w http.ResponseWriter, r *http.Request) {
 
 	remoteIp := r.RemoteAddr
 
-	log.Print(remoteIp, "This is the IP")
+	log.Println(remoteIp, "This is the IP")
 
 	m.App.Session.Put(r.Context(), "remote_ip", remoteIp)
 
-	render.RenderTemplate(w, r, "home.page.html", &models.TemplateData{
-
-	})
-	fmt.Print("this is done")
+	render.RenderTemplate(w, r, "home.page.html", &models.TemplateData{})
+	// fmt.Print("this is done")
 }
 
 func (m *Repositry) About(w http.ResponseWriter, r *http.Request) {
-	value := m.App.Session.GetString(r.Context(), "remote_ip")
-	stringMap := make(map[string]string)
-	stringMap["ip"] = value
-	render.RenderTemplate(w, r, "about.page.html", &models.TemplateData{
-		StringMap: stringMap,
-	})
+
+	render.RenderTemplate(w, r, "about.page.html", &models.TemplateData{})
 }
 
 func (m *Repositry) Reservation(w http.ResponseWriter, r *http.Request) {
-
-	fmt.Println("Rendering the Reservation page")
 
 	var emptyReservation models.Reservation
 
