@@ -32,8 +32,21 @@ func ConnectSQL(dsn string) (*DB, error) {
 
 	dbConn.SQL = d
 
+	err = testDB(dbConn.SQL)
+	if err != nil {
+		return nil, err
+	}
+
 	return dbConn, nil
 
+}
+
+func testDB(d *sql.DB) error {
+	err := d.Ping()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewDatabase(dsn string) (*sql.DB, error) {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/sanjay-xdr/cmd/internals/config"
+	"github.com/sanjay-xdr/cmd/internals/driver"
 	"github.com/sanjay-xdr/cmd/internals/handlers"
 	"github.com/sanjay-xdr/cmd/internals/models"
 	"github.com/sanjay-xdr/cmd/internals/render"
@@ -18,11 +19,13 @@ var sessionManager *scs.SessionManager
 
 func main() {
 
-	err := run()
+	dbConn, err := run()
 
 	if err != nil {
 		log.Fatal("Unable to run the project", err)
 	}
+
+	defer dbConn.SQL.Close()
 
 	// render.NewTemplate(&app)
 
@@ -41,7 +44,7 @@ func main() {
 	}
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 
 	gob.Register(models.Reservation{})
 
@@ -49,7 +52,7 @@ func run() error {
 
 	if err != nil {
 		log.Fatal(err)
-		return err
+		return nil, err
 	}
 
 	app.TemplateCache = tc
@@ -57,9 +60,6 @@ func run() error {
 	app.InProduction = false
 	render.NewTemplates(&app)
 
-	repo := handlers.NewRepo(&app)
-
-	handlers.NewHandlers(repo)
 	sessionManager = scs.New()
 	sessionManager.Lifetime = 24 * time.Hour
 	sessionManager.Cookie.Persist = true
@@ -68,5 +68,14 @@ func run() error {
 
 	app.Session = sessionManager
 
-	return nil
+	log.Println("Connecting to the Database")
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=sanjay")
+
+	if err != nil {
+		log.Fatal("Can not connect to Database")
+	}
+	log.Println("Connected to Database finally.....")
+	repo := handlers.NewRepo(&app, db)
+	handlers.NewHandlers(repo)
+	return db, nil
 }

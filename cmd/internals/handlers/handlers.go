@@ -5,23 +5,30 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/sanjay-xdr/cmd/internals/config"
+	"github.com/sanjay-xdr/cmd/internals/driver"
 	"github.com/sanjay-xdr/cmd/internals/forms"
 	"github.com/sanjay-xdr/cmd/internals/models"
 	"github.com/sanjay-xdr/cmd/internals/render"
+	"github.com/sanjay-xdr/cmd/internals/repository"
+	"github.com/sanjay-xdr/cmd/internals/repository/dbrepo"
 )
 
 var Repo *Repositry
 
 type Repositry struct {
 	App *config.AppConfig
+	DB  repository.DatabaseRepo
 }
 
 // Creates a new Repo
-func NewRepo(a *config.AppConfig) *Repositry {
+func NewRepo(a *config.AppConfig, db *driver.DB) *Repositry {
 	return &Repositry{
 		App: a,
+		DB:  dbrepo.NewPostgresRepo(db.SQL, a),
 	}
 }
 
@@ -71,11 +78,23 @@ func (m *Repositry) PostReservation(w http.ResponseWriter, r *http.Request) {
 		fmt.Print("Not able to parse err in handlers")
 	}
 
+	sd := r.Form.Get("start_date")
+	ed := r.Form.Get("end_date")
+
+	layout := "2006-01-02"
+	startDate, err := time.Parse(layout, sd)
+	endDate, err := time.Parse(layout, ed)
+
+	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
+
 	reservation := models.Reservation{
 		FirstName: r.Form.Get("first_name"),
 		LastName:  r.Form.Get("last_name"),
 		Email:     r.Form.Get("email"),
 		Phone:     r.Form.Get("phone"),
+		StartDate: startDate,
+		EndDate:   endDate,
+		RoomID:    roomID,
 	}
 
 	fmt.Println(r.PostForm)
@@ -100,6 +119,11 @@ func (m *Repositry) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = m.DB.InsertReservation(reservation)
+
+	if err != nil {
+		log.Fatal("Not able to insert", err)
+	}
 	m.App.Session.Put(r.Context(), "reservation", reservation)
 
 	http.Redirect(w, r, "/reservation-summary", http.StatusSeeOther)
